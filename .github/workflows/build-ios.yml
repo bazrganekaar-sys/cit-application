@@ -21,16 +21,23 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Install Capacitor Core & CLI
-        run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/ios --save
-          npx cap init CIT-App com.cit.application --web-dir dist || true
-
       - name: Build Web Assets
-        run: npm run build --if-present
-
-      - name: Add and Sync iOS Platform
         run: |
+          npm run build --if-present
+          # دروستکردنی فۆڵدەری خێرا ئەگەر build دروستی نەکردبێت
+          if [ ! -d "dist" ] && [ ! -d "build" ] && [ ! -d "www" ]; then
+            mkdir -p dist
+            echo '<!DOCTYPE html><html><head><title>CIT App</title></head><body><h1>CIT Application</h1></body></html>' > dist/index.html
+          fi
+
+      - name: Sync Capacitor iOS
+        run: |
+          # ئەگەر dist نەبوو سوود لە build یان www وەردەگرێت
+          WEB_DIR="dist"
+          if [ -d "build" ]; then WEB_DIR="build"; fi
+          if [ -d "www" ]; then WEB_DIR="www"; fi
+
+          npx cap init CIT-App com.cit.application --web-dir $WEB_DIR || true
           npx cap add ios || true
           npx cap sync ios
 
@@ -46,7 +53,7 @@ jobs:
           cd ios/App/build/ipa
           zip -r CIT-App.ipa Payload
 
-      - name: Upload IPA
+      - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: CIT-App-iOS
