@@ -1,0 +1,6 @@
+{
+  "appId": "com.cit.app",
+  "appName": "Manager Security",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

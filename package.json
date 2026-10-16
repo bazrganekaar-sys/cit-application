@@ -1,0 +1,36 @@
+{
+  "name": "cit-app",
+  "version": "1.0.0",
+  "description": "Manager Security Movement System",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.cit.app",
+    "productName": "Manager Security",
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Manager Security"
+    }
+  },
+  "author": "Manager Security",
+  "license": "ISC",
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/ios": "^8.5.3"
+  }
+}

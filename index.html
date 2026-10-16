@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ku">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager - Loading</title>
+    <style>
+        body { margin: 0; padding: 0; background: #000; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; direction: rtl; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error-message { color: #ff4d4d; text-align: center; font-size: 18px; padding: 20px; line-height: 1.6; font-weight: bold; }
+    </style>
+    <!--   Scriptی OneSignal   -->
+    <script src="cordova.js"></script>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <p style="margin-right: 10px;">...Wait a little longer</p>
+    </div>
+
+    <script>
+        // 🔔   OneSignal
+        function initPushNotifications() {
+            const appId = "ed0e053d-8649-4aca-8e65-39b57717054c";
+
+            if (window.OneSignalDeferred) {
+                window.OneSignalDeferred.push(function(OneSignal) {
+                    OneSignal.init({ appId: appId });
+                    OneSignal.Notifications.requestPermission(true);
+                });
+            } else if (window.plugins && window.plugins.OneSignal) {
+                window.plugins.OneSignal.initialize(appId);
+                window.plugins.OneSignal.Notifications.requestPermission(true);
+            }
+        }
+
+        async function loadApp() {
+            const supabaseUrl = "https://qerbtydyktrdzlthyjfb.supabase.co/storage/v1/object/sign/movement/CIT-Last%20-%20Update-35.html?token=eyJraWQiOiJkNTlmNmQ0My1hNzY4LTRiMTItYTJhYy0zNzAyNDg5OTAwMzciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtb3ZlbWVudC9DSVQtTGFzdCAtIFVwZGF0ZS0zNS5odG1sIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjA2NDg1NywiZXhwIjoxODIzNjAwODU3fQ.yJ9Ejlc_-tKFqxADiah7pMT7a-V30GT5wet4G_EZ3I0";
+
+            try {
+                const response = await fetch(supabaseUrl);
+
+                if (!response.ok) {
+                    throw new Error("سێرڤەر وەڵامی نەدایەوە یان بەسەرچووە");
+                }
+
+                const htmlCode = await response.text();
+
+                if (!htmlCode.includes("<html") && !htmlCode.includes("<!DOCTYPE") && !htmlCode.includes("<div")) {
+                    throw new Error(" HTML LOST ");
+                }
+
+                document.open();
+                document.write(htmlCode);
+                document.close();
+
+            } catch (error) {
+                console.error("server:", error);
+                
+                document.body.innerHTML = `
+                    <div class="error-message">
+                        ⚠️ کاتی نوێکردنەوەی سێرڤەر هاتووە.<br>
+                        پەیوەندی بەم ژمارەیەوە بکە: <b>07503353581</b>
+                    </div>
+                `;
+            }
+        }
+
+        document.addEventListener("deviceready", function() {
+            initPushNotifications();
+            loadApp();
+        }, false);
+
+        if (!window.cordova) {
+            initPushNotifications();
+            loadApp();
+        }
+    </script>
+</body>
+</html>
