@@ -2,7 +2,7 @@ name: Build iOS App
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -10,35 +10,36 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
-    - name: Install Dependencies
-      run: npm install
+      - name: Install Dependencies
+        run: npm install
 
-    - name: Sync Capacitor iOS
-      run: |
-        npx cap add ios || true
-        npx cap sync ios
+      - name: Build Web Assets
+        run: npm run build --if-present
 
-    - name: Build iOS App
-      run: |
-        cd ios/App
-        xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -derivedDataPath build -sdk iphoneos CODE_SIGNING_ALLOWED=NO
+      - name: Add and Sync iOS
+        run: |
+          npx cap add ios || true
+          npx cap sync ios
 
-    - name: Create Unsigned IPA
-      run: |
-        mkdir -p Payload
-        cp -r ios/App/build/Build/Products/Release-iphoneos/App.app Payload/
-        zip -r App-Unsigned.ipa Payload
+      - name: Build Unsigned IPA
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -sdk iphoneos -configuration Release archive -archivePath build/App.xcarchive
+          mkdir -p build/ipa/Payload
+          cp -r build/App.xcarchive/Products/Applications/App.app build/ipa/Payload/
+          cd build/ipa
+          zip -r CIT-App.ipa Payload
 
-    - name: Upload IPA Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: iOS-App-IPA
-        path: App-Unsigned.ipa
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CIT-App-iOS
+          path: ios/App/build/ipa/CIT-App.ipa
