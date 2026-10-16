@@ -29,7 +29,7 @@ jobs:
             echo '<!DOCTYPE html><html><head><title>CIT App</title></head><body><h1>CIT Application</h1></body></html>' > dist/index.html
           fi
 
-      - name: Generate Capacitor Assets & iOS Platform
+      - name: Prepare Capacitor iOS Platform
         run: |
           WEB_DIR="dist"
           if [ -d "build" ]; then WEB_DIR="build"; fi
@@ -38,18 +38,30 @@ jobs:
           rm -rf ios
           npx cap init CIT-App com.cit.application --web-dir $WEB_DIR || true
           npx cap add ios
-          
-          # دروستکردن و گواستنەوەی لۆگۆ/ئایکۆنی تایبەتی پرۆژەکە
-          npx @capacitor/assets generate --ios || true
           npx cap sync ios
 
-      - name: Build Simulator Application (No Signing Required)
+      - name: Inject Custom App Icon
+        run: |
+          # گەڕان بەدوای فایلی لۆگۆ و تێخستنی ڕاستەوخۆ بۆ ناو Assetەکانی iOS
+          ICON_SRC=$(find . -name "icon.png" -o -name "logo.png" | head -n 1)
+          if [ -n "$ICON_SRC" ]; then
+            echo "Found logo at $ICON_SRC, replacing AppIcon..."
+            ICON_DIR="ios/App/App/Assets.xcassets/AppIcon.appiconset"
+            mkdir -p "$ICON_DIR"
+            cp "$ICON_SRC" "$ICON_DIR/AppIcon-512@2x.png"
+            cp "$ICON_SRC" "$ICON_DIR/icon.png"
+          fi
+
+      - name: Build Xcode Project
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO -derivedDataPath buildDerivedData build || \
-          xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO -derivedDataPath buildDerivedData build
+          if [ -d "App.xcworkspace" ]; then
+            xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO -derivedDataPath buildDerivedData build
+          else
+            xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO -derivedDataPath buildDerivedData build
+          fi
 
-      - name: Package Unsigned Universal IPA
+      - name: Package Valid IPA Structure
         run: |
           mkdir -p ipa_build/Payload
           APP_PATH=$(find ios/App/buildDerivedData -name "App.app" -type d | head -n 1)
