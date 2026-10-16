@@ -24,27 +24,30 @@ jobs:
       - name: Build Web Assets
         run: |
           npm run build --if-present
-          # دروستکردنی فۆڵدەری خێرا ئەگەر build دروستی نەکردبێت
           if [ ! -d "dist" ] && [ ! -d "build" ] && [ ! -d "www" ]; then
             mkdir -p dist
             echo '<!DOCTYPE html><html><head><title>CIT App</title></head><body><h1>CIT Application</h1></body></html>' > dist/index.html
           fi
 
-      - name: Sync Capacitor iOS
+      - name: Clean & Re-add iOS Platform
         run: |
-          # ئەگەر dist نەبوو سوود لە build یان www وەردەگرێت
           WEB_DIR="dist"
           if [ -d "build" ]; then WEB_DIR="build"; fi
           if [ -d "www" ]; then WEB_DIR="www"; fi
 
+          rm -rf ios
           npx cap init CIT-App com.cit.application --web-dir $WEB_DIR || true
-          npx cap add ios || true
+          npx cap add ios
           npx cap sync ios
 
-      - name: Compile Xcode
+      - name: Compile Xcode Workspace or Project
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO build
+          if [ -d "App.xcworkspace" ]; then
+            xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO build
+          else
+            xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO build
+          fi
 
       - name: Package IPA File
         run: |
