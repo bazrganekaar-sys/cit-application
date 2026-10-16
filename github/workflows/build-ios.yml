@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install Dependencies
         run: npm install
@@ -34,19 +34,17 @@ jobs:
           npx cap add ios || true
           npx cap sync ios
 
-      - name: Build Unsigned IPA
+      - name: Compile Xcode Scheme
         run: |
-          if [ -d "ios/App" ]; then
-            cd ios/App
-            xcodebuild -workspace App.xcworkspace -scheme App -sdk iphoneos -configuration Release archive -archivePath build/App.xcarchive
-            mkdir -p build/ipa/Payload
-            cp -r build/App.xcarchive/Products/Applications/*.app build/ipa/Payload/ || true
-            cd build/ipa
-            zip -r CIT-App.ipa Payload
-          else
-            echo "iOS directory was not found!"
-            exit 1
-          fi
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -sdk iphoneos -configuration Release CODE_SIGNING_ALLOWED=NO
+
+      - name: Package Unsigned IPA
+        run: |
+          mkdir -p ios/App/build/ipa/Payload
+          cp -r ios/App/build/Release-iphoneos/App.app ios/App/build/ipa/Payload/ || cp -r ios/App/DerivedData/App/Build/Products/Release-iphoneos/App.app ios/App/build/ipa/Payload/
+          cd ios/App/build/ipa
+          zip -r CIT-App.ipa Payload
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
