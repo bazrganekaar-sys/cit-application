@@ -29,7 +29,7 @@ jobs:
             echo '<!DOCTYPE html><html><head><title>CIT App</title></head><body><h1>CIT Application</h1></body></html>' > dist/index.html
           fi
 
-      - name: Prepare Capacitor iOS Platform
+      - name: Generate Capacitor Assets & iOS Platform
         run: |
           WEB_DIR="dist"
           if [ -d "build" ]; then WEB_DIR="build"; fi
@@ -38,18 +38,18 @@ jobs:
           rm -rf ios
           npx cap init CIT-App com.cit.application --web-dir $WEB_DIR || true
           npx cap add ios
+          
+          # دروستکردن و گواستنەوەی لۆگۆ/ئایکۆنی تایبەتی پرۆژەکە
+          npx @capacitor/assets generate --ios || true
           npx cap sync ios
 
-      - name: Build Xcode Project
+      - name: Build Simulator Application (No Signing Required)
         run: |
           cd ios/App
-          if [ -d "App.xcworkspace" ]; then
-            xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO -derivedDataPath buildDerivedData build
-          else
-            xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO -derivedDataPath buildDerivedData build
-          fi
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO -derivedDataPath buildDerivedData build || \
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO -derivedDataPath buildDerivedData build
 
-      - name: Package Valid IPA Structure
+      - name: Package Unsigned Universal IPA
         run: |
           mkdir -p ipa_build/Payload
           APP_PATH=$(find ios/App/buildDerivedData -name "App.app" -type d | head -n 1)
