@@ -29,7 +29,7 @@ jobs:
             echo '<!DOCTYPE html><html><head><title>CIT App</title></head><body><h1>CIT Application</h1></body></html>' > dist/index.html
           fi
 
-      - name: Clean & Re-add iOS Platform
+      - name: Re-add iOS Platform
         run: |
           WEB_DIR="dist"
           if [ -d "build" ]; then WEB_DIR="build"; fi
@@ -40,24 +40,25 @@ jobs:
           npx cap add ios
           npx cap sync ios
 
-      - name: Compile Xcode Workspace or Project
+      - name: Build iOS App Bundle
         run: |
           cd ios/App
-          if [ -d "App.xcworkspace" ]; then
-            xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO build
-          else
-            xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO build
-          fi
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO -derivedDataPath buildDerivedData build
 
-      - name: Package IPA File
+      - name: Package Valid IPA Structure
         run: |
-          mkdir -p ios/App/build/ipa/Payload
-          find ios/App/ -name "App.app" -type d -exec cp -r {} ios/App/build/ipa/Payload/ \;
-          cd ios/App/build/ipa
+          mkdir -p ipa_build/Payload
+          APP_PATH=$(find ios/App/buildDerivedData -name "App.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: App.app not found!"
+            exit 1
+          fi
+          cp -R "$APP_PATH" ipa_build/Payload/
+          cd ipa_build
           zip -r CIT-App.ipa Payload
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: CIT-App-iOS
-          path: ios/App/build/ipa/CIT-App.ipa
+          path: ipa_build/CIT-App.ipa
