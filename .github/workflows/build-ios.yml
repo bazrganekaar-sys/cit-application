@@ -29,7 +29,7 @@ jobs:
             echo '<!DOCTYPE html><html><head><title>CIT App</title></head><body><h1>CIT Application</h1></body></html>' > dist/index.html
           fi
 
-      - name: Re-add iOS Platform
+      - name: Prepare Capacitor iOS Platform
         run: |
           WEB_DIR="dist"
           if [ -d "build" ]; then WEB_DIR="build"; fi
@@ -40,10 +40,14 @@ jobs:
           npx cap add ios
           npx cap sync ios
 
-      - name: Build iOS App Bundle
+      - name: Build Xcode Project
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO -derivedDataPath buildDerivedData build
+          if [ -d "App.xcworkspace" ]; then
+            xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO -derivedDataPath buildDerivedData build
+          else
+            xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO -derivedDataPath buildDerivedData build
+          fi
 
       - name: Package Valid IPA Structure
         run: |
